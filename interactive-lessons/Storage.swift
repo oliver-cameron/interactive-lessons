@@ -62,7 +62,7 @@ class GlobalVariableStore: Codable {
     func binding<T>(for key: String, cast: @escaping (StorageValue) -> T?, transform: @escaping(T) -> StorageValue) -> Binding<T> where T: Equatable {
         Binding(
             get: {
-                guard let rawValue = self.registry[key], let typedValue = cast(rawValue) else {
+                guard let rawValue = self.registry[key], let typedValue = rawValue.value() else {
                     fatalError("Missing or mis-typed storage mapping context for key: \(key)")
                 }
                 return typedValue
@@ -85,5 +85,22 @@ class GlobalVariableStore: Codable {
     
     func encode(to encoder: any Encoder) throws {
         var container = encoder
+    }
+}
+
+extension StorageValue {
+    // Pull the value out of the storagevalue enum
+    func Type() -> SendableMetatype {
+        switch self {
+            case .integer(_): return Int.self
+            case .boolean(_): return Bool.self
+            case .float(_): return Double.self
+            case .string(_): return String.self
+        }
+    }
+    func Value() -> Self.Type {
+        switch self {
+            case .integer(let v): return v
+        }
     }
 }

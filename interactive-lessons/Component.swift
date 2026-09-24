@@ -93,5 +93,18 @@ struct TextComponent: JSONTextInterpolatable {
 
 // MARK: Slider
 struct SliderComponent: Component {
-    @
+    @Environment(GlobalVariableStore.self) private var store
+    
+    enum CodingKeys: CodingKey {
+        case variable
+        case min
+        case max
+    }
+    
+    @Binding private var value: Double
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let variablePointer = try container.decode(String.self, forKey: .variable)
+        self.value = store.binding(for: variablePointer, cast: <#T##(StorageValue) -> Equatable?#>, transform: <#T##(Equatable) -> StorageValue#>)
+    }
 }

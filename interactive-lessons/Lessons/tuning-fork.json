@@ -1,0 +1,14 @@
+{
+  "variables": [
+    { "name": "freq", "value": 440, "colour": "blue" },
+    { "name": "period", "fn": "reciprocal", "inputs": ["freq"], "colour": "orange" }
+  ],
+  "body": { "type": "vstack", "contents": [
+    { "type": "text", "text": "Drag the frequency; the period follows." },
+    { "type": "text", "text": "The last two components are deliberate mistakes, to show how errors render." },
+    { "type": "slider", "variable": "freq", "min": 20, "max": 2000, "step": 1 },
+    { "type": "slider", "variable": "period", "min": 0, "max": 0.05 },
+    { "type": "slider", "variable": "fequency", "min": 0, "max": 1 },
+    { "type": "wobble" }
+  ]}
+}

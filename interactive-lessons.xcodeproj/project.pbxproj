@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3FED3FB2304E6A6C0064DB0F /* LessonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3FED3FB1304E6A6C0064DB0F /* LessonKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3FED3F8E304E6A6C0064DB0F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3FED3FB2304E6A6C0064DB0F /* LessonKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = "interactive-lessons";
 			packageProductDependencies = (
+				3FED3FB1304E6A6C0064DB0F /* LessonKit */,
 			);
 			productName = "interactive-lessons";
 			productReference = 3FED3F7C304E6A680064DB0F /* interactive-lessons.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 3FED3F73304E6A680064DB0F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3FED3FB0304E6A6C0064DB0F /* XCLocalSwiftPackageReference "LessonKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3FED3F7D304E6A680064DB0F /* Products */;
 			projectDirPath = "";
@@ -620,6 +629,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		3FED3FB0304E6A6C0064DB0F /* XCLocalSwiftPackageReference "LessonKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LessonKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3FED3FB1304E6A6C0064DB0F /* LessonKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LessonKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3FED3F74304E6A680064DB0F /* Project object */;
 }

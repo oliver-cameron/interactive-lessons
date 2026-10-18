@@ -7,12 +7,23 @@ public enum Ink: Equatable, Sendable {
     case palette(PaletteColor)
     case axis
     case error
+    // Contrasts with any palette colour; rings draggable points so they show over fills.
+    case marker
 }
 
 public enum Primitive: Equatable, Sendable {
     case polyline([Vec2], ink: Ink, width: Double, arrowAtEnd: Bool)
     case dot(Vec2, ink: Ink, radius: Double)
     case text(String, at: Vec2, anchor: LabelAnchor, ink: Ink)
+    // Fills the diagram with a fragment shader (translated Metal source). Uniform values are in
+    // the order the shader reads them; colours become three floats when the renderer resolves them.
+    // Shaders are drawn behind every other primitive.
+    case shader(metal: String, uniforms: [ShaderValue])
+}
+
+public enum ShaderValue: Equatable, Sendable {
+    case number(Double)
+    case colour(PaletteColor)
 }
 
 // A draggable point. Dragging writes whichever coordinates are variables.
@@ -38,6 +49,7 @@ public enum DiagramCompiler {
                 list.primitives += axes(diagram.bounds)
             case .point(let p, let colour, let drag):
                 let at = p.current
+                if drag { list.primitives.append(.dot(at, ink: .marker, radius: 8)) }
                 list.primitives.append(.dot(at, ink: .palette(colour), radius: drag ? 6 : 4))
                 if drag, p.x.variable != nil || p.y.variable != nil {
                     list.handles.append(DragHandle(position: at, x: p.x.variable, y: p.y.variable))
@@ -50,6 +62,14 @@ public enum DiagramCompiler {
                 list.primitives.append(.text(TextSegment.render(text), at: at.current, anchor: anchor, ink: .palette(colour)))
             case .plot(let name, let fn, let inputs, let colour):
                 list.primitives += plot(name, fn, inputs, colour, diagram.bounds, samples: samples)
+            case .shader(let metal, let uniforms):
+                let values = uniforms.flatMap { u -> [ShaderValue] in
+                    switch u {
+                    case .scalars(let s): s.map { .number($0.current) }
+                    case .colour(let c): [.colour(c)]
+                    }
+                }
+                list.primitives.append(.shader(metal: metal, uniforms: values))
             }
         }
         return list

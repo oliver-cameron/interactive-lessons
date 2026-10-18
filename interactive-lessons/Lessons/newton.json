@@ -1,0 +1,51 @@
+{
+  "variables": [
+    { "name": "r1x", "value": 1, "colour": "red" },
+    { "name": "r1y", "value": 0, "colour": "red" },
+    { "name": "r2x", "value": -0.5, "colour": "blue" },
+    { "name": "r2y", "value": 0.866, "colour": "blue" },
+    { "name": "r3x", "value": -0.5, "colour": "green" },
+    { "name": "r3y", "value": -0.866, "colour": "green" },
+    { "name": "steps", "value": 32, "colour": "orange" }
+  ],
+  "body": { "type": "vstack", "contents": [
+    { "type": "text", "text": "Newton's method on p(z) = (z − r₁)(z − r₂)(z − r₃), started from every point of the plane. Each point is coloured by the root it reaches, darker the more steps it took. Drag the roots." },
+    { "type": "slider", "variable": "steps", "min": 1, "max": 60, "step": 1 },
+    { "type": "diagram", "x": [-2, 2], "y": [-2, 2], "height": 400, "elements": [
+      { "type": "shader",
+        "uniforms": {
+          "r1": ["r1x", "r1y"], "r2": ["r2x", "r2y"], "r3": ["r3x", "r3y"],
+          "c1": { "colour": "r1x" }, "c2": { "colour": "r2x" }, "c3": { "colour": "r3x" },
+          "steps": "steps"
+        },
+        "glsl": [
+          "uniform vec2 r1, r2, r3;",
+          "uniform vec3 c1, c2, c3;",
+          "uniform float steps;",
+          "",
+          "// 1/z for a complex number stored as (re, im).",
+          "vec2 inv(vec2 z) { return vec2(z.x, -z.y) / max(dot(z, z), 1e-20); }",
+          "",
+          "vec4 shade(vec2 z) {",
+          "    int n = int(clamp(steps, 1.0, 200.0));",
+          "    int used = n;",
+          "    for (int i = 0; i < 200; i++) {",
+          "        if (i >= n) break;",
+          "        // Newton step z -= p/p'. For p = (z - r1)(z - r2)(z - r3), p'/p = sum of 1/(z - rk).",
+          "        vec2 dz = inv(inv(z - r1) + inv(z - r2) + inv(z - r3));",
+          "        z -= dz;",
+          "        if (dot(dz, dz) < 1e-8) { used = i; break; }",
+          "    }",
+          "    float d1 = distance(z, r1), d2 = distance(z, r2), d3 = distance(z, r3);",
+          "    vec3 c = (d1 < d2 && d1 < d3) ? c1 : (d2 < d3 ? c2 : c3);",
+          "    return vec4(c * (1.0 - 0.7 * float(used) / float(n)), 1.0);",
+          "}"
+        ]
+      },
+      { "type": "axes" },
+      { "type": "point", "at": ["r1x", "r1y"], "drag": true },
+      { "type": "point", "at": ["r2x", "r2y"], "drag": true },
+      { "type": "point", "at": ["r3x", "r3y"], "drag": true }
+    ]}
+  ]}
+}

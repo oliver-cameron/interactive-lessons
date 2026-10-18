@@ -29,7 +29,8 @@ struct DiagramTests {
     @Test func draggablePointGivesHandleAndTakesItsVariablesColour() throws {
         let (_, d) = try load([.point(at: Point(.variable("px"), .variable("py")), colour: nil, drag: true)])
         let list = DiagramCompiler.compile(d, samples: 10)
-        #expect(list.primitives == [.dot(Vec2(2, 1), ink: .palette(.purple), radius: 6)])
+        #expect(list.primitives == [.dot(Vec2(2, 1), ink: .marker, radius: 8),
+                                    .dot(Vec2(2, 1), ink: .palette(.purple), radius: 6)])
         #expect(list.handles.count == 1)
         #expect(list.handles[0].x?.name == "px")
     }
@@ -56,6 +57,39 @@ struct DiagramTests {
             Issue.record("Expected an error label"); return
         }
         #expect(message == "bad: no")
+    }
+
+    @Test func shaderPassesCurrentUniformValuesInNameOrder() throws {
+        let (loaded, d) = try load([.shader(glsl: "vec4 shade(vec2 p) { return vec4(c, 1.0); }", uniforms: [
+            "r": .vector([.variable("px"), .variable("py")]),
+            "c": .colour("px"),
+            "k": .scalar(.constant(0.5)),
+        ])])
+        func uniforms() -> [ShaderValue]? {
+            if case .shader(_, let u) = DiagramCompiler.compile(d, samples: 10).primitives.first { u } else { nil }
+        }
+        // Sorted by name: c, k, r.
+        #expect(uniforms() == [.colour(.purple), .number(0.5), .number(2), .number(1)])
+        loaded.store["px"]!.write(.number(-1))
+        #expect(uniforms() == [.colour(.purple), .number(0.5), .number(-1), .number(1)])
+    }
+
+    @Test func shaderColourMustBeVariableOrPaletteName() throws {
+        let loaded = try Resolver.load(Lesson(
+            variables: [],
+            body: .diagram(Diagram(x: [-1, 1], y: [-1, 1], elements: [
+                .shader(glsl: "vec4 shade(vec2 p) { return vec4(1.0); }", uniforms: ["c": .colour("teal")]),
+            ]))
+        ))
+        guard case .error(let message) = loaded.body else { Issue.record("not an error"); return }
+        #expect(message.contains("teal"))
+    }
+
+    @Test func shaderSourceDecodesFromArrayOfLines() throws {
+        let json = #"{"type": "shader", "glsl": ["vec4 shade(vec2 p) {", "  return vec4(1.0);", "}"], "uniforms": {"c": {"colour": "red"}, "r": [1, "py"]}}"#
+        let element = try JSONDecoder().decode(DiagramElement.self, from: Data(json.utf8))
+        #expect(element == .shader(glsl: "vec4 shade(vec2 p) {\n  return vec4(1.0);\n}",
+                                   uniforms: ["c": .colour("red"), "r": .vector([.constant(1), .variable("py")])]))
     }
 
     @Test func unknownElementMakesTheDiagramAnErrorNode() throws {

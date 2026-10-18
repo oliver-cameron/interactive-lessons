@@ -122,6 +122,35 @@ public enum Resolver {
                     inputs.append(v)
                 }
                 return .plot(name: name, fn: fn, inputs: inputs, colour: try colourFor(colour, inputs))
+            case .shader(let glsl, let uniforms):
+                var declarations: [GLSLTranslator.Uniform] = []
+                var values: [ResolvedUniform] = []
+                // Sorted, so the buffer layout doesn't depend on dictionary order.
+                for (name, uniform) in uniforms.sorted(by: { $0.key < $1.key }) {
+                    switch uniform {
+                    case .scalar(let s):
+                        declarations.append(.init(name: name, components: 1))
+                        values.append(.scalars([try resolve(s)]))
+                    case .vector(let v):
+                        guard (2...4).contains(v.count) else {
+                            throw Problem(message: "shader uniform \(name) has \(v.count) components; vectors have 2 to 4.")
+                        }
+                        declarations.append(.init(name: name, components: v.count))
+                        var scalars: [ResolvedScalar] = []
+                        for s in v { scalars.append(try resolve(s)) }
+                        values.append(.scalars(scalars))
+                    case .colour(let colourName):
+                        declarations.append(.init(name: name, components: 3))
+                        if let v = store[colourName] { values.append(.colour(v.colour)) }
+                        else if let c = PaletteColor(rawValue: colourName) { values.append(.colour(c)) }
+                        else { throw Problem(message: "shader colour \(colourName) is neither a variable nor one of \(PaletteColorNames.list).") }
+                    }
+                }
+                do {
+                    return .shader(metal: try GLSLTranslator.metalSource(glsl: glsl, uniforms: declarations), uniforms: values)
+                } catch {
+                    throw Problem(message: "shader: \(error.message)")
+                }
             case .unknown(let type):
                 throw Problem(message: "unknown element type \"\(type)\".")
             }

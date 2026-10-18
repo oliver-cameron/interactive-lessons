@@ -21,6 +21,7 @@ private struct DiagramCanvas: View {
     let size: CGSize
 
     @Environment(VariableStore.self) private var store
+    @Environment(\.self) private var environment
     @State private var dragged: DragHandle?
 
     // Grab radius for drag handles, in screen points.
@@ -32,9 +33,15 @@ private struct DiagramCanvas: View {
         // the diagram reads and redraws it when any of them changes.
         let list = DiagramCompiler.compile(diagram, samples: max(Int(size.width / 2), 2))
 
-        Canvas { context, _ in
-            for primitive in list.primitives {
-                Self.draw(primitive, in: &context, viewport)
+        ZStack {
+            ForEach(Array(shaders(list, viewport).enumerated()), id: \.offset) { _, shader in
+                ShaderView(metal: shader.metal, floats: shader.floats)
+                    .allowsHitTesting(false)
+            }
+            Canvas { context, _ in
+                for primitive in list.primitives {
+                    Self.draw(primitive, in: &context, viewport)
+                }
             }
         }
         .contentShape(Rectangle())
@@ -51,6 +58,25 @@ private struct DiagramCanvas: View {
                 }
                 .onEnded { _ in dragged = nil }
         )
+    }
+
+    // Each shader primitive with its float buffer: bounds, then uniforms with colours as RGB.
+    private func shaders(_ list: DisplayList, _ viewport: Viewport) -> [(metal: String, floats: [Float])] {
+        let b = viewport.bounds
+        let header = [b.x.lowerBound, b.x.upperBound, b.y.lowerBound, b.y.upperBound].map(Float.init)
+        return list.primitives.compactMap { primitive in
+            guard case .shader(let metal, let uniforms) = primitive else { return nil }
+            let floats = uniforms.flatMap { value -> [Float] in
+                switch value {
+                case .number(let d):
+                    return [Float(d)]
+                case .colour(let c):
+                    let r = c.color.resolve(in: environment)
+                    return [r.red, r.green, r.blue]
+                }
+            }
+            return (metal, header + floats)
+        }
     }
 
     private func nearestHandle(to location: CGPoint, _ list: DisplayList, _ viewport: Viewport) -> DragHandle? {
@@ -83,6 +109,9 @@ private struct DiagramCanvas: View {
             let c = cg(at)
             context.fill(Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: 2 * radius, height: 2 * radius)),
                          with: .color(ink.color))
+        case .shader:
+            // Drawn by ShaderView, behind the Canvas.
+            return
         case .text(let string, let at, let anchor, let ink):
             let (offset, unitPoint) = placement(anchor)
             let c = cg(at)

@@ -22,6 +22,7 @@ extension Ink {
         case .palette(let p): p.color
         case .axis: .secondary
         case .error: .red
+        case .marker: .white
         }
     }
 }

@@ -83,12 +83,16 @@ public enum DiagramElement: Equatable, Sendable {
     case label(at: Point, text: String, anchor: String?, colour: String?)
     // y = fn(x, inputs...). The function is a built-in or a lesson JavaScript function.
     case plot(fn: String, inputs: [String], colour: String?)
+    // A GLSL fragment shader filling the diagram, translated to Metal at load. The source
+    // defines vec4 shade(vec2 p), with p in maths coordinates, or Shadertoy's mainImage.
+    // Uniforms are named in `uniforms` and bound to numbers, variables or colours.
+    case shader(glsl: String, uniforms: [String: ShaderUniform])
     case unknown(type: String)
 }
 
 extension DiagramElement: Codable {
     private enum CodingKeys: String, CodingKey {
-        case type, at, from, to, colour, drag, text, anchor, fn, inputs
+        case type, at, from, to, colour, drag, text, anchor, fn, inputs, glsl, uniforms
     }
 
     public init(from decoder: Decoder) throws {
@@ -113,6 +117,11 @@ extension DiagramElement: Codable {
         case "plot":
             self = .plot(fn: try c.decode(String.self, forKey: .fn),
                          inputs: try c.decodeIfPresent([String].self, forKey: .inputs) ?? [], colour: colour)
+        case "shader":
+            // The source may be one string or an array of lines, which reads better in JSON.
+            let glsl = try (try? c.decode(String.self, forKey: .glsl))
+                ?? c.decode([String].self, forKey: .glsl).joined(separator: "\n")
+            self = .shader(glsl: glsl, uniforms: try c.decodeIfPresent([String: ShaderUniform].self, forKey: .uniforms) ?? [:])
         default:
             self = .unknown(type: type)
         }
@@ -149,8 +158,40 @@ extension DiagramElement: Codable {
             try c.encode(fn, forKey: .fn)
             try c.encode(inputs, forKey: .inputs)
             try c.encodeIfPresent(colour, forKey: .colour)
+        case .shader(let glsl, let uniforms):
+            try c.encode("shader", forKey: .type)
+            try c.encode(glsl, forKey: .glsl)
+            try c.encode(uniforms, forKey: .uniforms)
         case .unknown(let type):
             try c.encode(type, forKey: .type)
+        }
+    }
+}
+
+// A shader uniform's value. In JSON: a number or variable name (float), an array of two to
+// four of those (vec2 to vec4), or { "colour": name } for a variable's or palette colour (vec3).
+public enum ShaderUniform: Equatable, Sendable {
+    case scalar(Scalar)
+    case vector([Scalar])
+    case colour(String)
+}
+
+extension ShaderUniform: Codable {
+    private struct ColourRef: Codable { var colour: String }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let s = try? c.decode(Scalar.self) { self = .scalar(s) }
+        else if let v = try? c.decode([Scalar].self) { self = .vector(v) }
+        else { self = .colour(try c.decode(ColourRef.self).colour) }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .scalar(let s): try c.encode(s)
+        case .vector(let v): try c.encode(v)
+        case .colour(let name): try c.encode(ColourRef(colour: name))
         }
     }
 }

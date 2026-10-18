@@ -42,4 +42,11 @@ public enum ResolvedElement {
     case vector(from: ResolvedPoint, to: ResolvedPoint, colour: PaletteColor)
     case label(at: ResolvedPoint, text: [TextSegment], anchor: LabelAnchor, colour: PaletteColor)
     case plot(name: String, fn: FunctionRegistry.Function, inputs: [Variable], colour: PaletteColor)
+    // `metal` is the translated source; uniforms are in the order its fragment function reads them.
+    case shader(metal: String, uniforms: [ResolvedUniform])
+}
+
+public enum ResolvedUniform {
+    case scalars([ResolvedScalar])
+    case colour(PaletteColor)
 }

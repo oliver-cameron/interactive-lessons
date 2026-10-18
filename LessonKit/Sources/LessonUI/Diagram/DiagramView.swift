@@ -28,10 +28,10 @@ private struct DiagramCanvas: View {
     private let grabRadius = 24.0
 
     var body: some View {
-        let viewport = Viewport(bounds: diagram.bounds, width: size.width, height: size.height)
+        let viewport = Viewport.fitting(diagram.bounds, width: size.width, height: size.height)
         // Compiled in body, not in the Canvas closure, so observation sees which variables
         // the diagram reads and redraws it when any of them changes.
-        let list = DiagramCompiler.compile(diagram, samples: max(Int(size.width / 2), 2))
+        let list = DiagramCompiler.compile(diagram, bounds: viewport.bounds, samples: max(Int(size.width / 2), 2))
 
         ZStack {
             ForEach(Array(shaders(list, viewport).enumerated()), id: \.offset) { _, shader in

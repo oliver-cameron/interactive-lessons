@@ -41,12 +41,14 @@ public struct DisplayList {
 @MainActor
 public enum DiagramCompiler {
     // `samples` is how many x values a plot evaluates; the renderer ties it to pixel width.
-    public static func compile(_ diagram: ResolvedDiagram, samples: Int) -> DisplayList {
+    // `bounds` is the window actually shown, which may be wider than the diagram asked for.
+    public static func compile(_ diagram: ResolvedDiagram, bounds: Bounds? = nil, samples: Int) -> DisplayList {
+        let bounds = bounds ?? diagram.bounds
         var list = DisplayList()
         for element in diagram.elements {
             switch element {
             case .axes:
-                list.primitives += axes(diagram.bounds)
+                list.primitives += axes(bounds)
             case .point(let p, let colour, let drag):
                 let at = p.current
                 if drag { list.primitives.append(.dot(at, ink: .marker, radius: 8)) }
@@ -61,7 +63,7 @@ public enum DiagramCompiler {
             case .label(let at, let text, let anchor, let colour):
                 list.primitives.append(.text(TextSegment.render(text), at: at.current, anchor: anchor, ink: .palette(colour)))
             case .plot(let name, let fn, let inputs, let colour):
-                list.primitives += plot(name, fn, inputs, colour, diagram.bounds, samples: samples)
+                list.primitives += plot(name, fn, inputs, colour, bounds, samples: samples)
             case .shader(let metal, let uniforms):
                 let values = uniforms.flatMap { u -> [ShaderValue] in
                     switch u {

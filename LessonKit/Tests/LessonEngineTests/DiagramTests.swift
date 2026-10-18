@@ -108,6 +108,27 @@ struct DiagramTests {
         #expect(zip(unit, [0, 0.2, 0.4, 0.6, 0.8, 1]).allSatisfy { abs($0 - $1) < 1e-12 })
     }
 
+    @Test func fittingWidensTheShorterRangeSoUnitsAreSquare() {
+        // A 2:1 frame showing a square window: x widens to [-4, 4], y stays [-2, 2].
+        let wide = Viewport.fitting(Bounds(x: -2...2, y: -2...2), width: 800, height: 400)
+        #expect(wide.bounds == Bounds(x: -4...4, y: -2...2))
+        // A tall frame widens y instead, about the window's centre.
+        let tall = Viewport.fitting(Bounds(x: 0...4, y: 1...3), width: 200, height: 400)
+        #expect(tall.bounds == Bounds(x: 0...4, y: -2...6))
+        // Equal scale: a unit step in x and in y cover the same number of points.
+        let a = wide.toScreen(Vec2(0, 0)), b = wide.toScreen(Vec2(1, 1))
+        #expect(abs(b.x - a.x) == abs(b.y - a.y))
+    }
+
+    @Test func axesSpanTheFittedWindow() throws {
+        let (_, d) = try load([.axes])
+        let shown = Bounds(x: -10...10, y: -5...5)
+        guard case .polyline(let xAxis, _, _, _) = DiagramCompiler.compile(d, bounds: shown, samples: 2).primitives.first else {
+            Issue.record("no axis"); return
+        }
+        #expect(xAxis == [Vec2(-10, 0), Vec2(10, 0)])
+    }
+
     @Test func viewportRoundTrips() {
         let v = Viewport(bounds: Bounds(x: -5...5, y: -2...2), width: 400, height: 200)
         #expect(v.toScreen(Vec2(-5, 2)) == Vec2(0, 0))

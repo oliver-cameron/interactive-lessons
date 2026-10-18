@@ -1,0 +1,26 @@
+{
+  "functions": {
+    "wave": "(x, a, k) => a * Math.sin(k * x)",
+    "length": "(x, y) => Math.hypot(x, y)"
+  },
+  "variables": [
+    { "name": "a", "value": 1.5 },
+    { "name": "k", "value": 1 },
+    { "name": "px", "value": 2, "colour": "purple" },
+    { "name": "py", "value": 1, "colour": "purple" },
+    { "name": "len", "fn": "length", "inputs": ["px", "py"], "colour": "purple" }
+  ],
+  "body": { "type": "vstack", "contents": [
+    { "type": "text", "text": "y = \\var{a} sin(\\var{k} x)" },
+    { "type": "slider", "variable": "a", "min": 0, "max": 3 },
+    { "type": "slider", "variable": "k", "min": 0.25, "max": 4 },
+    { "type": "diagram", "x": [-6.5, 6.5], "y": [-3.5, 3.5], "height": 320, "elements": [
+      { "type": "axes" },
+      { "type": "plot", "fn": "wave", "inputs": ["a", "k"] },
+      { "type": "vector", "to": ["px", "py"] },
+      { "type": "point", "at": ["px", "py"], "drag": true },
+      { "type": "label", "at": ["px", "py"], "text": "|v| = \\var{len}" }
+    ]},
+    { "type": "text", "text": "Drag the purple point. The vector's length is \\var{len}." }
+  ]}
+}

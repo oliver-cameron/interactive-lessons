@@ -10,13 +10,15 @@ struct SliderNode: View {
         let value = variable.binding(default: range.lowerBound)
         HStack {
             Text(verbatim: variable.name)
+                .foregroundStyle(variable.colour.color)
             if let step {
                 Slider(value: value, in: range, step: step)
             } else {
                 Slider(value: value, in: range)
             }
-            Text(value.wrappedValue, format: .number.precision(.fractionLength(0...3)))
+            Text(verbatim: variable.value.displayString)
                 .monospacedDigit()
         }
+        .tint(variable.colour.color)
     }
 }

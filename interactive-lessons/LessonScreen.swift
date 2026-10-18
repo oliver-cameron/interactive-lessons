@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import LessonModel
 import LessonEngine
+import LessonScript
 import LessonUI
 
 // Loads a lesson bundled with the app and shows it, or shows why it didn't load.
@@ -28,6 +29,8 @@ struct LessonScreen: View {
             throw CocoaError(.fileNoSuchFile)
         }
         let lesson = try JSONDecoder().decode(Lesson.self, from: Data(contentsOf: url))
-        return try Resolver.load(lesson)
+        var functions = FunctionRegistry.standard
+        try functions.addJavaScript(lesson.functions ?? [:])
+        return try Resolver.load(lesson, functions: functions)
     }
 }

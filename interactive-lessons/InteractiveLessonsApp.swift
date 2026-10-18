@@ -11,7 +11,7 @@ import SwiftUI
 struct InteractiveLessonsApp: App {
     var body: some Scene {
         WindowGroup {
-            LessonScreen(resource: "tuning-fork")
+            LessonScreen(resource: "wave")
         }
     }
 }

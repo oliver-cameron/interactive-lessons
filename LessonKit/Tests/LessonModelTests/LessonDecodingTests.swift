@@ -24,4 +24,14 @@ struct LessonDecodingTests {
         let data = try JSONEncoder().encode(lesson)
         #expect(try JSONDecoder().decode(Lesson.self, from: data) == lesson)
     }
+
+    @Test func sampleLessonDecodes() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("interactive-lessons/Lessons/wave.json")
+        let lesson = try JSONDecoder().decode(Lesson.self, from: Data(contentsOf: url))
+        #expect(lesson.functions?.keys.sorted() == ["length", "wave"])
+        guard case .vstack(let children) = lesson.body else { Issue.record("not a vstack"); return }
+        #expect(children.contains { if case .diagram = $0 { true } else { false } })
+    }
 }

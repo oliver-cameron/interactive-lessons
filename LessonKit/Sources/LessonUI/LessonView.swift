@@ -10,9 +10,13 @@ public struct LessonView: View {
 
     public var body: some View {
         ScrollView {
-            NodeView(lesson.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+            VStack(alignment: .leading, spacing: 16) {
+                NodeView(lesson.body)
+                Divider()
+                VariablePanel(store: lesson.store)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
         }
         .environment(lesson.store)
     }

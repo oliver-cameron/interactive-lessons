@@ -5,10 +5,10 @@ import LessonModel
 struct VariableDefinition {
     enum Source {
         case literal(Value)
-        case computed(inputs: [String], compute: ([Value]) -> Value)
+        case computed(inputs: [String], compute: FunctionRegistry.Function)
     }
     var name: String
-    var colour: String?
+    var colour: PaletteColor
     var source: Source
 
     var inputNames: [String] {
@@ -41,8 +41,9 @@ public final class VariableStore {
                 variable = Variable(name: definition.name, value: value, colour: definition.colour, kind: .input)
             case .computed(let inputNames, let compute):
                 let inputs = inputNames.map { created[$0]! }
-                variable = Variable(name: definition.name, value: compute(inputs.map(\.value)),
+                variable = Variable(name: definition.name, value: .number(.nan),
                                     colour: definition.colour, kind: .computed(inputs: inputs, compute: compute))
+                variable.recompute()
             }
             variable.store = self
             created[definition.name] = variable
@@ -71,10 +72,9 @@ public final class VariableStore {
         for variable in topologicalOrder {
             guard case .computed(let inputs, let compute) = variable.kind,
                   inputs.contains(where: { changed.contains(ObjectIdentifier($0)) }) else { continue }
-            let newValue = compute(inputs.map(\.value))
-            guard newValue != variable.value else { continue }
-            variable.value = newValue
-            changed.insert(ObjectIdentifier(variable))
+            if variable.recompute(compute, inputs) {
+                changed.insert(ObjectIdentifier(variable))
+            }
         }
     }
 
@@ -112,5 +112,30 @@ public final class VariableStore {
             throw LoadError.cycle(definitions.map(\.name).filter { !placed.contains($0) })
         }
         return ready
+    }
+}
+
+extension Variable {
+    // Runs the function and stores the result, or the error and the last good value.
+    // Returns whether the value changed (compare-before-write).
+    @discardableResult
+    func recompute() -> Bool {
+        guard case .computed(let inputs, let compute) = kind else { return false }
+        return recompute(compute, inputs)
+    }
+
+    func recompute(_ compute: FunctionRegistry.Function, _ inputs: [Variable]) -> Bool {
+        let newValue: Value
+        do {
+            newValue = try compute(inputs.map(\.value))
+        } catch {
+            let message = String(describing: error)
+            if self.error != message { self.error = message }
+            return false
+        }
+        if self.error != nil { self.error = nil }
+        guard newValue != value else { return false }
+        value = newValue
+        return true
     }
 }

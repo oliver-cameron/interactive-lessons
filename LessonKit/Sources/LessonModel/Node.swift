@@ -5,6 +5,7 @@ public indirect enum Node: Equatable, Sendable {
     case vstack([Node])
     case text(String)
     case slider(variable: String, min: Double, max: Double, step: Double?)
+    case diagram(Diagram)
     // A component type this version doesn't know. Rendered as a visible error.
     case unknown(type: String)
 }
@@ -27,6 +28,8 @@ extension Node: Codable {
                            min: try c.decode(Double.self, forKey: .min),
                            max: try c.decode(Double.self, forKey: .max),
                            step: try c.decodeIfPresent(Double.self, forKey: .step))
+        case "diagram":
+            self = .diagram(try Diagram(from: decoder))
         default:
             self = .unknown(type: type)
         }
@@ -47,6 +50,9 @@ extension Node: Codable {
             try c.encode(min, forKey: .min)
             try c.encode(max, forKey: .max)
             try c.encodeIfPresent(step, forKey: .step)
+        case .diagram(let diagram):
+            try c.encode("diagram", forKey: .type)
+            try diagram.encode(to: encoder)
         case .unknown(let type):
             // Only the type survives; the unknown component's other fields are lost.
             try c.encode(type, forKey: .type)

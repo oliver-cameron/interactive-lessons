@@ -16,10 +16,12 @@ public struct NodeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(children.indices, id: \.self) { NodeView(children[$0]) }
             }
-        case .text(let text):
-            TextNode(text: text)
+        case .text(let segments):
+            TextNode(segments: segments)
         case .slider(let variable, let range, let step):
             SliderNode(variable: variable, range: range, step: step)
+        case .diagram(let diagram):
+            DiagramView(diagram: diagram)
         case .error(let message):
             ErrorNode(message: message)
         }

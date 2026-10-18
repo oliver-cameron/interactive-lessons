@@ -5,19 +5,22 @@ import PackageDescription
 // Three layers, each allowed to import less than the one after it:
 //   LessonModel   Foundation only. The saved lesson format; plain Codable data.
 //   LessonEngine  Observation, no SwiftUI. Builds the variable store and resolves names.
+//   LessonScript  JavaScriptCore. Adds a lesson's JavaScript functions to the registry.
 //   LessonUI      SwiftUI. Renders a resolved lesson.
 let package = Package(
     name: "LessonKit",
     platforms: [.iOS(.v26), .macOS(.v26), .visionOS(.v26)],
     products: [
-        .library(name: "LessonKit", targets: ["LessonModel", "LessonEngine", "LessonUI"]),
+        .library(name: "LessonKit", targets: ["LessonModel", "LessonEngine", "LessonScript", "LessonUI"]),
     ],
     targets: [
         .target(name: "LessonModel"),
         .target(name: "LessonEngine", dependencies: ["LessonModel"]),
+        .target(name: "LessonScript", dependencies: ["LessonModel", "LessonEngine"]),
         .target(name: "LessonUI", dependencies: ["LessonModel", "LessonEngine"]),
         .testTarget(name: "LessonModelTests", dependencies: ["LessonModel"]),
         .testTarget(name: "LessonEngineTests", dependencies: ["LessonModel", "LessonEngine"]),
+        .testTarget(name: "LessonScriptTests", dependencies: ["LessonModel", "LessonEngine", "LessonScript"]),
     ],
     // Matches the app target. Move to Swift 6 once the store settles (design.md section 11).
     swiftLanguageModes: [.v5]

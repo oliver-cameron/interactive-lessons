@@ -6,20 +6,22 @@ import LessonModel
 public final class Variable: Identifiable {
     public enum Kind {
         case input
-        case computed(inputs: [Variable], compute: ([Value]) -> Value)
+        case computed(inputs: [Variable], compute: FunctionRegistry.Function)
     }
 
     public let id = UUID()
     public let name: String
     public let kind: Kind
-    public var colour: String?
+    public let colour: PaletteColor
 
-    // Only the store sets this, so every change goes through propagation.
+    // Only the store sets these, so every change goes through propagation.
     public internal(set) var value: Value
+    // Set when the variable's function threw; the value is then the last good one.
+    public internal(set) var error: String?
 
     @ObservationIgnored weak var store: VariableStore?
 
-    init(name: String, value: Value, colour: String?, kind: Kind) {
+    init(name: String, value: Value, colour: PaletteColor, kind: Kind) {
         self.name = name
         self.value = value
         self.colour = colour
